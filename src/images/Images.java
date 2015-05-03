@@ -1,14 +1,14 @@
 package images;
+//References
+//https://community.oracle.com/thread/1269440
 
 import java.awt.*;
-//import java.awt.event.*;
 import java.awt.image.*;
 import java.io.*;
 import javax.imageio.*;
 import javax.swing.*;
 import java.util.Random;
 import static java.lang.Math.abs;
-//import java.awt.image.RescaleOp;
 
 public class Images {
     BufferedImage img;
@@ -16,6 +16,7 @@ public class Images {
     BufferedImage st;
     int height;
     int width;
+    int[][] graph;
     
     public Images(){
         try{
@@ -25,42 +26,9 @@ public class Images {
         catch (IOException e){};
         height = img.getHeight();
         width = img.getWidth();
+        graph = new int[width][height];
     }
- /*
-    //public void paint(Graphics) {
-    //    gg.drawImage(bw, 0, 0, null);
-    //}
 
- 
-   
-    public Dimension getPreferredSize() {
-        if (img == null) return new Dimension(100,100);
-        else return new Dimension(width, height);
-    }
- 
-    public void Greyscale(){
-        //scans pixels and converts them to greyscale 
-         for(int i=0; i<height; i++){         
-            for(int j=0; j<width; j++){
-                
-               Color c = new Color(img.getRGB(j, i));
-               int red = (int)(c.getRed() * 0.2126);
-               int green = (int)(c.getGreen() * 0.7152);
-               int blue = (int)(c.getBlue() *0.0722);
-               Color newColor = new Color(red+green+blue,red+green+blue,red+green+blue);
-               img.setRGB(j,i,newColor.getRGB());
-            }
-         }
-    }
-    
-    public void Washout(){
-    RescaleOp brighten = new RescaleOp(1.2f, 15, null);
-    brighten.filter(img, img);
-    }
-    //public BufferedImage BW(int width, int height){         
-    //    return bw;
-    //}
-    */
     public Graphics2D DiColor(){
         bw = new BufferedImage(width, height, BufferedImage.TYPE_BYTE_BINARY);
         Graphics2D g = bw.createGraphics();
@@ -78,12 +46,6 @@ public class Images {
         st = bw;
         for(int i=0; i<height; i++){         
             for(int j=0; j<width; j++){
-               //Color c = new Color(img.getRGB(j, i));
-               //int red = (int)(c.getRed() * 0.2126);
-               //int green = (int)(c.getGreen() * 0.7152);
-               //int blue = (int)(c.getBlue() *0.0722);
-               //Color newColor = new Color(red+green+blue,red+green+blue,red+green+blue);
-               //img.setRGB(j,i,newColor.getRGB());
                Color c = new Color (st.getRGB(j, i));
                Color white = new Color(255,255,255,255);
                if (c.getGreen()==0){
@@ -94,15 +56,56 @@ public class Images {
         g.dispose();
     }
     
+    public void initializeMatrix(int[][] matrix){
+        for (int x=0; x<width; x++){
+            for (int y=0; y<height; y++){
+                matrix[x][y]=0;
+            }
+        }
+    }
+    
+    public void setMatrix(int[][] graph){
+        for (int i=0; i<height; i++){
+            for (int j=0; j<width; j++){
+                Color c2 = new Color (st.getRGB(j, i));
+                if (c2.getGreen()==0) graph[i][j]=1;
+            }
+        }
+    }
+    
     public Color getPixelColor(int x, int y){
         Color c = new Color (bw.getRGB(x, y));
         System.out.println("Blue: "+c.getBlue()+"Red: "+c.getRed()+"Green: "+c.getGreen()+"Alpha: "+c.getAlpha());
         return c;
     }
+    
+    public void printMatrix(int[][] matrix){
+        for (int x=0; x<width; x++){
+            for (int y=0; y<height; y++){
+                System.out.print(matrix[x][y]+" ");
+            }
+            System.out.println();
+        }
+    }
+    
+    public int getTourSize (int[][] matrix){
+        int numPts =0;
+        for (int x=0; x<width; x++){
+            for (int y=0; y<height; y++){
+                if (matrix[x][y]==1) numPts++;
+            }
+        }
+        return numPts;
+    }
 
     public static void main(String[] args) throws IOException{       
         Images obj = new Images();
         obj.Stipple(obj.DiColor());
+        obj.initializeMatrix(obj.graph);
+        obj.setMatrix(obj.graph);
+        MST mst = new MST (obj.width, obj.height, obj.graph);
+        mst.setWeights(obj.graph);
+        obj.printMatrix(mst.weights);
         JPanel cp = new JPanel(new GridLayout(2,1));
         cp.add(new JLabel(new ImageIcon(obj.bw)));
         cp.add(new JLabel(new ImageIcon(obj.st)));        
@@ -113,13 +116,4 @@ public class Images {
         f.setLocationRelativeTo(null);
         f.setVisible(true);
        }
-            //Greyscale();
-            //Washout();
-            //f.addWindowListener(
-        //    new WindowAdapter() {
-        //        public void windowClosing(WindowEvent e) {System.exit(0);}
-        //    }
-        //);        
-        //f.add( new Images());
-        //Greyscale();
-    }
+}
